@@ -32,7 +32,8 @@ func Slash(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, prompt, uuid.New().String())
+	callbackID := uuid.New().String()
+	fmt.Fprintf(w, prompt, callbackID, callbackID, callbackID)
 }
 
 // Meeting is the configuration for a meeting.
@@ -53,31 +54,30 @@ func NewInteractionStateStore() *InteractionStateStore {
 	return &InteractionStateStore{state: make(map[string]*Meeting)}
 }
 
-func (x *InteractionStateStore) startMeetingMsg(callbackID string) []byte {
-	meetingURL := fmt.Sprintf(
-		"https://meet.jit.si/atlassian/%s",
-		jitsi.RandomName(),
+func (x *InteractionStateStore) startMeetingMsg(callbackID string) string {
+	var (
+		meetingURL = fmt.Sprintf(
+			"https://meet.jit.si/atlassian/%s",
+			jitsi.RandomName(),
+		)
+		meeting *Meeting
+		ok      bool
+		msg     string
 	)
-	return []byte(fmt.Sprintf(roomTemplate, meetingURL, meetingURL, meetingURL))
 
-	// if meeting, ok := x.state[callbackID]; !ok {
-	// 	// user hit start w/o making a selection so default to a Jitsi meeting ;-)
-	// 	meetingURL := fmt.Sprintf(
-	// 		"https://meet.jit.si/atlassian/%s",
-	// 		jitsi.RandomName(),
-	// 	)
-	// 	return []byte(fmt.Sprintf(roomTemplate, meetingURL, meetingURL, meetingURL))
-	// } else {
-	// 	fmt.Println(meeting)
+	if meeting, ok = x.state[callbackID]; !ok {
+		// user hit start w/o making a selection so default to a Jitsi meeting ;-)
+		return fmt.Sprintf("Meeting starting in %s\n", meetingURL)
+	}
 
-	// 	// TODO: Switch on meeting data here and generate message with appropriate links
-	// 	meetingURL := fmt.Sprintf(
-	// 		"https://meet.jit.si/atlassian/%s",
-	// 		jitsi.RandomName(),
-	// 	)
-	// 	return []byte(fmt.Sprintf(roomTemplate, meetingURL, meetingURL, meetingURL))
-
-	// }
+	if meeting.ConferenceType == "jitsi" {
+		msg = fmt.Sprintf("Meeting starting in %s\n", meetingURL)
+	}
+	if meeting.TrackingType == "confluence" {
+		msg = msg + fmt.Sprintf("Take notes with %s", "https://www.google.com")
+	}
+	fmt.Printf("\n%s\n", msg)
+	return msg
 }
 
 // SlashInteraction is
@@ -116,6 +116,7 @@ func (x *InteractionStateStore) SlashInteraction(w http.ResponseWriter, r *http.
 			}
 		}
 		w.WriteHeader(http.StatusOK)
+		x.mux.Unlock()
 		return
 	case "tracking":
 		if meeting, ok := x.state[payload.CallbackId]; ok {
@@ -126,12 +127,13 @@ func (x *InteractionStateStore) SlashInteraction(w http.ResponseWriter, r *http.
 			}
 		}
 		w.WriteHeader(http.StatusOK)
+		x.mux.Unlock()
 		return
 	case "start":
+		fmt.Print("\n start \n")
 		msg := x.startMeetingMsg(payload.CallbackId)
-		w.Header().Set("Content-type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write(msg)
+		fmt.Fprint(w, msg)
 		x.mux.Unlock()
 		return
 	default:
