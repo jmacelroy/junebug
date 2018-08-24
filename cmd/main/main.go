@@ -21,7 +21,13 @@ var log = zerolog.New(os.Stdout).With().
 
 type appCfg struct {
 	// server config
-	HTTPPort string `env:"HTTP_PORT" envDefault:"8080"`
+	HTTPPort           string `env:"HTTP_PORT" envDefault:"8080"`
+	ConfluenceIssuer   string `env:"CONFLUENCE_ISSUER" envDefault:"junebug-confluence-writer"`
+	ConfluenceAudience string `env:"CONFLUENCE_AUDIENCE,required"`
+	ConfluenceSecret   string `env:"CONFLUENCE_SECRET,required"`
+	ConfluenceQsh      string `env:"CONFLUENCE_QUERY_HASH" envDefault:"79ccdc28e5f25b5ee15d7dfcfcc7977848375ea060057ed4e17b7b4aef756694"`
+	ConfluenceSpace    string `env:"CONFLUENCE_SPACE" envDefault:"MEET"`
+	ConfluenceURL      string `env:"CONFLUENCE_URL,required"`
 }
 
 func main() {
@@ -65,7 +71,9 @@ func main() {
 		hlog.RequestIDHandler("req_id", "Request-Id"),
 	)
 
-	InteractionState := junebug.NewInteractionStateStore()
+	confluenceClient := junebug.NewConfluenceClient(app.ConfluenceURL, app.ConfluenceSpace, app.ConfluenceQsh, &junebug.ConfluenceTokenGenerator{Issuer: app.ConfluenceIssuer, Audience: app.ConfluenceAudience, Secret: app.ConfluenceSecret})
+
+	InteractionState := junebug.NewSlashHandler(confluenceClient)
 
 	slashJuneBug := chain.ThenFunc(junebug.Slash)
 	slashJuneBugInteraction := chain.ThenFunc(InteractionState.SlashInteraction)

@@ -6,8 +6,8 @@ import (
     jwt "github.com/dgrijalva/jwt-go"
 )
 
-// TokenGenerator generates conference tokens for auth'ed users.
-type TokenGenerator struct {
+// ConfluenceTokenGenerator generates conference tokens for auth'ed users.
+type ConfluenceTokenGenerator struct {
     Lifetime time.Duration
     Secret   string
     Issuer   string
@@ -15,7 +15,7 @@ type TokenGenerator struct {
 }
 
 // CreateJWT generates conference tokens for auth'ed users.
-func (g TokenGenerator) CreateJWT(qsh string) (string, error) {
+func (g ConfluenceTokenGenerator) CreateJWT(qsh string) (string, error) {
     now := time.Now()
     exp := now.Add(g.Lifetime)
     aud := make([]string, 1)
