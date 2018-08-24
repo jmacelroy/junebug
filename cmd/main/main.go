@@ -3,16 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"os"
-	"os/signal"
-	"time"
-
-	"bitbucket.org/atlassian/pushan"
+	"github.com/aaronkvanmeerten/junebug"
 	"github.com/caarlos0/env"
 	"github.com/justinas/alice"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
+	"net/http"
+	"os"
+	"os/signal"
+	"time"
 )
 
 var log = zerolog.New(os.Stdout).With().
