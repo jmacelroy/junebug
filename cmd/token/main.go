@@ -37,4 +37,11 @@ func main() {
         log.Fatal().Err(err).Msg("token failed to be created")
     }
     log.Info().Msgf("testing token: %s", token)
+    cc := junebug.ConfluenceClient{URL: "https://pi-dev-sandbox.atlassian.net/wiki"}
+    cp, err := cc.CreatePage(token, "some more testing", "MEET")
+    if err != nil {
+        log.Fatal().Err(err).Msg("confluence page failed to be created")
+    }
+    log.Info().Msgf("page results: %s %s %s", cp.ID, cp.GetWebURL(), cp.GetEditURL())
+
 }

@@ -32,14 +32,3 @@ func (g TokenGenerator) CreateJWT(qsh string) (string, error) {
 
     return token.SignedString([]byte(g.Secret))
 }
-
-type userClaim struct {
-    ID          string `json:"id"`
-    DisplayName string `json:"name"`
-    AvatarURL   string `json:"avatar"`
-}
-
-type contextClaim struct {
-    User  userClaim `json:"user"`
-    Group string    `json:"group"`
-}
