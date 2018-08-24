@@ -4,6 +4,7 @@ import (
     "bytes"
     "encoding/json"
     "fmt"
+    "github.com/google/uuid"
     "io/ioutil"
     "net/http"
 )
@@ -54,6 +55,7 @@ func (cc ConfluenceClient) CreatePage(title string) (ConfluencePage, error) {
     if err != nil {
         return ConfluencePage{}, err
     }
+    title = fmt.Sprintf("%s %s", title, uuid.New().String())
 
     createURL := cc.url + "/rest/api/content"
     jsonStr := []byte(fmt.Sprintf(`{"type":"page","title":"%s","space":{"key":"%s"}}`, title, cc.space))
