@@ -71,7 +71,7 @@ func main() {
 		hlog.RequestIDHandler("req_id", "Request-Id"),
 	)
 
-	confluenceClient := junebug.NewConfluenceClient(app.ConfluenceURL, app.ConfluenceSpace, app.ConfluenceQsh, &junebug.ConfluenceTokenGenerator{Issuer: app.ConfluenceIssuer, Audience: app.ConfluenceAudience, Secret: app.ConfluenceSecret})
+	confluenceClient := junebug.NewConfluenceClient(app.ConfluenceURL, app.ConfluenceSpace, app.ConfluenceQsh, &junebug.ConfluenceTokenGenerator{Lifetime: time.Hour * 24, Issuer: app.ConfluenceIssuer, Audience: app.ConfluenceAudience, Secret: app.ConfluenceSecret})
 
 	InteractionState := junebug.NewSlashHandler(confluenceClient)
 
