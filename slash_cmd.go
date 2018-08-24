@@ -42,27 +42,28 @@ type Meeting struct {
 	TrackingType   string
 }
 
-// InteractionStateStore stores state for meeting setup interactions.
-type InteractionStateStore struct {
+// SlashHandler stores state for meeting setup interactions.
+type SlashHandler struct {
 	state map[string]*Meeting
 	mux   sync.Mutex
+	cc    *ConfluenceClient
 }
 
-// NewInteractionStateStore provides a clean instance of the
-// state store.
-func NewInteractionStateStore() *InteractionStateStore {
-	return &InteractionStateStore{state: make(map[string]*Meeting)}
+// NewSlashHandler provides a clean instance of the state store.
+func NewSlashHandler(confluenceClient *ConfluenceClient) *SlashHandler {
+	return &SlashHandler{state: make(map[string]*Meeting), cc: confluenceClient}
 }
 
-func (x *InteractionStateStore) startMeetingMsg(callbackID string) string {
+func (x *SlashHandler) startMeetingMsg(callbackID string) string {
 	var (
 		meetingURL = fmt.Sprintf(
 			"https://meet.jit.si/atlassian/%s",
 			jitsi.RandomName(),
 		)
-		meeting *Meeting
-		ok      bool
-		msg     string
+		meetingNameBase = "My Testing Meeting"
+		meeting         *Meeting
+		ok              bool
+		msg             string
 	)
 
 	if meeting, ok = x.state[callbackID]; !ok {
@@ -74,14 +75,18 @@ func (x *InteractionStateStore) startMeetingMsg(callbackID string) string {
 		msg = fmt.Sprintf("Meeting starting in %s\n", meetingURL)
 	}
 	if meeting.TrackingType == "confluence" {
-		msg = msg + fmt.Sprintf("Take notes with %s", "https://www.google.com")
+		cp, err := x.cc.CreatePage(meetingNameBase)
+		if err != nil {
+			//do something with the error
+		}
+		msg = msg + fmt.Sprintf("Take notes with %s", cp.GetEditURL())
 	}
 	fmt.Printf("\n%s\n", msg)
 	return msg
 }
 
 // SlashInteraction is
-func (x *InteractionStateStore) SlashInteraction(w http.ResponseWriter, r *http.Request) {
+func (x *SlashHandler) SlashInteraction(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		hlog.FromRequest(r).Error().

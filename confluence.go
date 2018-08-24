@@ -10,7 +10,10 @@ import (
 
 // ConfluenceClient generates conference tokens for auth'ed users.
 type ConfluenceClient struct {
-    URL string
+    url   string
+    tg    *ConfluenceTokenGenerator
+    qsh   string
+    space string
 }
 
 // ConfluencePageLinks contains URLs for the created page
@@ -30,6 +33,11 @@ type ConfluencePage struct {
     Links  ConfluencePageLinks `json:"_links"`
 }
 
+// NewConfluenceClient provides a clean instance of the state store.
+func NewConfluenceClient(url string, space string, qsh string, tokenGenerator *ConfluenceTokenGenerator) *ConfluenceClient {
+    return &ConfluenceClient{url: url, space: space, tg: tokenGenerator, qsh: qsh}
+}
+
 // GetEditURL returns the edit URL for a confluence page
 func (cp ConfluencePage) GetEditURL() string {
     return fmt.Sprintf("%s%s", cp.Links.Base, cp.Links.EditUI)
@@ -41,9 +49,14 @@ func (cp ConfluencePage) GetWebURL() string {
 }
 
 // CreatePage generates a confluence page based on a bunch of stuffs
-func (cc ConfluenceClient) CreatePage(token, title, space string) (ConfluencePage, error) {
-    createURL := cc.URL + "/rest/api/content"
-    jsonStr := []byte(fmt.Sprintf(`{"type":"page","title":"%s","space":{"key":"%s"}}`, title, space))
+func (cc ConfluenceClient) CreatePage(title string) (ConfluencePage, error) {
+    token, err := cc.tg.CreateJWT(cc.qsh)
+    if err != nil {
+        return ConfluencePage{}, err
+    }
+
+    createURL := cc.url + "/rest/api/content"
+    jsonStr := []byte(fmt.Sprintf(`{"type":"page","title":"%s","space":{"key":"%s"}}`, title, cc.space))
 
     req, err := http.NewRequest("POST", createURL, bytes.NewBuffer(jsonStr))
     if err != nil {
